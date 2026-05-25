@@ -9,8 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
-        body { background: linear-gradient(135deg, #0a0f2c 0%, #0b1a3a 100%); }
-        .text-gold { color: #f5b042; }
+        body { background: linear-gradient(135deg, #0a0f2c 0%, #0b1a3a 100%); min-height: 100vh; }
+        .text-gold { color: #f5b042 !important; }
         .bg-gold { background: #f5b042; }
         .btn-gold { background: linear-gradient(135deg, #f5b042 0%, #e09d2c 100%); color: #0a0f2c; font-weight: 600; transition: 0.2s; }
         .btn-gold:hover { transform: scale(1.02); opacity: 0.95; }
@@ -21,7 +21,10 @@
         .active-page { background: linear-gradient(135deg, #f5b042 0%, #e09d2c 100%); color: #0a0f2c; }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: #0f1338; border-radius: 1.5rem; max-width: 500px; width: 90%; padding: 2rem; border: 1px solid #f5b042; }
-        .badge-gold { background: #f5b04220; color: #f5b042; border-radius: 999px; padding: 4px 12px; font-size: 0.7rem; font-weight: 600; }
+        .admin-badge { background: #f5b04220; color: #f5b042; border-radius: 999px; padding: 4px 12px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+        .admin-badge:hover { background: #f5b04240; }
+        .product-item, .investment-item, .faizsiz-item { transition: 0.2s; }
+        .product-item:hover, .investment-item:hover, .faizsiz-item:hover { background: #f5b04210; }
     </style>
 </head>
 <body>
@@ -32,9 +35,33 @@
     // ---------- STATE ----------
     let currentPage = "home";
     let isLoggedIn = false;
+    let isAdmin = false;
     let user = { name: "Ahmet Yatırımcı", email: "ahmet@katilim.com", ortaklik: "Gümüş Ortak" };
-
-    // ---------- MODAL ----------
+    
+    // ---------- VERİLER (Yönetici tarafından düzenlenebilir) ----------
+    let ortaklikPaketleri = [
+        { id: 1, name: "Ortak", komisyon: "%3", fiyat: "Ücretsiz", icon: "fa-user" },
+        { id: 2, name: "Bronz Ortak", komisyon: "%5", fiyat: "500 ₺", icon: "fa-medal" },
+        { id: 3, name: "Gümüş Ortak", komisyon: "%10", fiyat: "2.000 ₺", icon: "fa-gem" },
+        { id: 4, name: "Altın Ortak", komisyon: "%15", fiyat: "5.000 ₺", icon: "fa-crown" },
+        { id: 5, name: "Platin Ortak", komisyon: "%20", fiyat: "15.000 ₺", icon: "fa-star" },
+        { id: 6, name: "Elmas Ortak", komisyon: "%30", fiyat: "50.000 ₺", icon: "fa-diamond" }
+    ];
+    
+    let faizsizUrunler = [
+        { id: 1, name: "Araç Finansmanı", aciklama: "Faizsiz araç sahibi olma sistemi", fiyat: "Başlangıç 50.000 ₺" },
+        { id: 2, name: "Ev Finansmanı", aciklama: "Eminevim/Katılımevim modeli", fiyat: "Başlangıç 200.000 ₺" },
+        { id: 3, name: "İşyeri Finansmanı", aciklama: "Ticari gayrimenkul faizsiz", fiyat: "Başlangıç 300.000 ₺" },
+        { id: 4, name: "Ev Eşyası Finansmanı", aciklama: "Beyaz eşya, mobilya, elektronik", fiyat: "Başlangıç 10.000 ₺" }
+    ];
+    
+    let ortakYatirimHavuzlari = [
+        { id: 1, name: "Teknolojik Üretim Girişimi", hedef: "10.000.000 ₺", toplanan: "3.200.000 ₺", katilim: "1.000 ₺" },
+        { id: 2, name: "Doğal Ürün Girişimi", hedef: "5.000.000 ₺", toplanan: "1.800.000 ₺", katilim: "500 ₺" },
+        { id: 3, name: "Yazılım ve Yapay Zeka Girişimi", hedef: "8.000.000 ₺", toplanan: "2.500.000 ₺", katilim: "2.000 ₺" }
+    ];
+    
+    // ---------- MODAL & WHATSAPP ----------
     function openModal(title, contentHtml) {
         const modal = document.createElement("div");
         modal.className = "modal";
@@ -47,7 +74,11 @@
         `;
         document.body.appendChild(modal);
     }
-
+    
+    function whatsappBasvuru(text) {
+        window.open(`https://wa.me/905418660202?text=${encodeURIComponent(text)}`, '_blank');
+    }
+    
     function openLoginModal() {
         const modal = document.createElement("div");
         modal.className = "modal";
@@ -67,31 +98,106 @@
             render();
         };
     }
-
-    // ---------- SAYFA İÇERİKLERİ ----------
+    
+    // ---------- YÖNETİM PANELİ (Şifreli) ----------
+    let adminPassword = "admin123";
+    
+    function openAdminPanel() {
+        const modal = document.createElement("div");
+        modal.className = "modal";
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2 class="text-2xl font-bold text-gold mb-4">👑 Yönetici Paneli</h2>
+                <input type="password" id="adminPass" placeholder="Şifre" class="w-full p-3 rounded-xl bg-[#1a1f4a] border border-[#2a2f5a] mb-4">
+                <button id="verifyAdmin" class="w-full btn-gold py-2 rounded-xl">Giriş</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById("verifyAdmin").onclick = () => {
+            if (document.getElementById("adminPass").value === adminPassword) {
+                isAdmin = true;
+                modal.remove();
+                render();
+                alert("Yönetici paneline hoş geldiniz! Ürün ekleme/silme aktif.");
+            } else {
+                alert("Şifre yanlış!");
+            }
+        };
+    }
+    
+    // Ürün Ekleme / Silme (Yönetici)
+    function addOrtaklikPaketi() {
+        let name = prompt("Paket Adı (örn: Premium Ortak)");
+        if (!name) return;
+        let komisyon = prompt("Komisyon Oranı (örn: %25)");
+        let fiyat = prompt("Fiyat (örn: 30.000 ₺)");
+        ortaklikPaketleri.push({ id: Date.now(), name, komisyon, fiyat, icon: "fa-certificate" });
+        render();
+        alert("✅ Paket eklendi!");
+    }
+    
+    function deleteOrtaklikPaketi(id) {
+        if (confirm("Bu paketi silmek istediğinize emin misiniz?")) {
+            ortaklikPaketleri = ortaklikPaketleri.filter(p => p.id !== id);
+            render();
+        }
+    }
+    
+    function addFaizsizUrun() {
+        let name = prompt("Ürün Adı (örn: Yazlık Finansmanı)");
+        if (!name) return;
+        let aciklama = prompt("Açıklama");
+        let fiyat = prompt("Başlangıç Fiyatı");
+        faizsizUrunler.push({ id: Date.now(), name, aciklama, fiyat });
+        render();
+        alert("✅ Faizsiz ürün eklendi!");
+    }
+    
+    function deleteFaizsizUrun(id) {
+        if (confirm("Bu ürünü silmek istediğinize emin misiniz?")) {
+            faizsizUrunler = faizsizUrunler.filter(u => u.id !== id);
+            render();
+        }
+    }
+    
+    function addYatirimHavuzu() {
+        let name = prompt("Girişim Adı");
+        if (!name) return;
+        let hedef = prompt("Hedef Büyüklük (örn: 20.000.000 ₺)");
+        let katilim = prompt("Minimum Katılım");
+        ortakYatirimHavuzlari.push({ id: Date.now(), name, hedef, toplanan: "0 ₺", katilim });
+        render();
+        alert("✅ Yatırım havuzu eklendi!");
+    }
+    
+    function deleteYatirimHavuzu(id) {
+        if (confirm("Bu havuzu silmek istediğinize emin misiniz?")) {
+            ortakYatirimHavuzlari = ortakYatirimHavuzlari.filter(h => h.id !== id);
+            render();
+        }
+    }
+    
+    // ---------- SAYFALAR ----------
     const pages = {
         home: () => `
-            <div class="mb-6">
-                <h2 class="text-3xl font-bold text-gold mb-2">Faizsiz Finans Ekosistemi</h2>
-                <p class="text-gray-300">Helal kazanç, ortak yatırım, barter, FIRE fonu ve katılım modelleri</p>
-            </div>
+            <div class="mb-6"><h2 class="text-3xl font-bold text-gold mb-2">Faizsiz Finans Ekosistemi</h2><p class="text-gray-300">Helal kazanç, ortak yatırım, barter, FIRE fonu ve katılım modelleri</p></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="card p-6"><i class="fas fa-chart-line text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold">Yatırım Ürünleri</h3><p class="text-gray-400 text-sm">Kira sertifikası, sukuk, katılım hisse, gayrimenkul ortaklığı</p><button class="mt-3 text-gold text-sm" onclick="currentPage='yatirim';render()">→ Detay</button></div>
-                <div class="card p-6"><i class="fas fa-hand-holding-heart text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold">Faizsiz Sistem</h3><p class="text-gray-400 text-sm">Eminevim/Katılımevim modeli, faizsiz finansman</p><button class="mt-3 text-gold text-sm" onclick="currentPage='faizsiz';render()">→ Detay</button></div>
-                <div class="card p-6"><i class="fas fa-exchange-alt text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold">Barter Modülü</h3><p class="text-gray-400 text-sm">İşletmeler arası takas ve mal değişimi</p><button class="mt-3 text-gold text-sm" onclick="currentPage='barter';render()">→ Detay</button></div>
-                <div class="card p-6"><i class="fas fa-handshake text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold">Ortak Yatırım</h3><p class="text-gray-400 text-sm">Kâr-zarar ortaklığı, reel proje havuzları</p><button class="mt-3 text-gold text-sm" onclick="currentPage='ortakyatirim';render()">→ Detay</button></div>
-                <div class="card p-6"><i class="fas fa-fire text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold">FİRE Yatırım Fonu</h3><p class="text-gray-400 text-sm">Finansal bağımsızlık için faizsiz birikim fonu</p><button class="mt-3 text-gold text-sm" onclick="currentPage='firefonu';render()">→ Detay</button></div>
-                <div class="card p-6"><i class="fas fa-users text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold">Ortaklık Paketleri</h3><p class="text-gray-400 text-sm">WhatsApp ile satış ortaklığı, komisyon modeli</p><button class="mt-3 text-gold text-sm" onclick="currentPage='ortaklikpaketleri';render()">→ Detay</button></div>
+                <div class="card p-6"><i class="fas fa-chart-line text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">Yatırım Ürünleri</h3><p class="text-gray-400">Kira sertifikası, sukuk, katılım hisse</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='yatirim';render()">→ Detay</button></div>
+                <div class="card p-6"><i class="fas fa-hand-holding-heart text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">Faizsiz Sistem</h3><p class="text-gray-400">Eminevim/Katılımevim modeli</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='faizsiz';render()">→ Detay</button></div>
+                <div class="card p-6"><i class="fas fa-exchange-alt text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">Barter Modülü</h3><p class="text-gray-400">İşletmeler arası takas</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='barter';render()">→ Detay</button></div>
+                <div class="card p-6"><i class="fas fa-handshake text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">Ortak Yatırım</h3><p class="text-gray-400">Kâr-zarar ortaklığı</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='ortakyatirim';render()">→ Detay</button></div>
+                <div class="card p-6"><i class="fas fa-fire text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">FİRE Yatırım Fonu</h3><p class="text-gray-400">Faizsiz birikim fonu</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='firefonu';render()">→ Detay</button></div>
+                <div class="card p-6"><i class="fas fa-users text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">Ortaklık Paketleri</h3><p class="text-gray-400">WhatsApp satış ortaklığı</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='ortaklikpaketleri';render()">→ Detay</button></div>
             </div>
         `,
-        yatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold">📊 Yatırım Ürünleri (Faizsiz)</h2><div class="mt-4 space-y-4">${["Kira Sertifikası (Sukuk) - Yıllık %14 getiri", "Katılım Endeksi Hisse Sepeti", "Altın ve Emtia Katılım Fonu", "Gayrimenkul Ortaklığı (REIT)"].map(p => `<div class="flex justify-between p-3 bg-[#1a1f4a] rounded-xl"><span>${p}</span><button class="text-gold text-sm" onclick="openModal('Yatırım Detay','<p>Faizsiz ve ortaklık esaslı ürün. Minimum 5.000 TL.</p>')">İncele</button></div>`).join('')}</div><button class="mt-6 btn-gold px-5 py-2 rounded-lg w-full">Portföy Oluştur</button></div>`,
-        faizsiz: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold">🏠 Faizsiz Sistem (Eminevim / Katılımevim)</h2><p class="text-gray-300 mt-2">Faizsiz ev sahibi olma, araç finansmanı ve ihtiyaç finansmanı.</p><div class="grid md:grid-cols-2 gap-4 mt-4"><div class="p-3 bg-[#1a1f4a] rounded-xl">Ev Grubu (12 ay sıra)</div><div class="p-3 bg-[#1a1f4a] rounded-xl">Araç Grubu (24 ay)</div></div><button class="mt-5 btn-gold px-5 py-2 rounded-lg w-full" onclick="openModal('Faizsiz Sistem','Detaylı bilgi için yetkilimizle iletişime geçin.')">Başvur</button></div>`,
-        barter: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold">🔄 Barter (Takas) Modülü</h2><p class="text-gray-300">İşletmeler arası mal/hizmet takası. Faizsiz, komisyonsuz.</p><div class="grid md:grid-cols-2 gap-4 mt-5"><button class="btn-gold py-2 rounded-lg">Takas İlanı Ver</button><button class="btn-gold py-2 rounded-lg">Takas Ara</button></div></div>`,
-        ortakyatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold">🤝 Ortak Yatırım Havuzları</h2><div class="space-y-3 mt-4">${["Tarım Projesi | Hedef: 2.000.000 ₺", "Emlak Geliştirme | Hedef: 5.000.000 ₺", "Dijital Girişim Fonu | Hedef: 1.500.000 ₺"].map(p => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl"><span>${p}</span><button class="text-gold text-sm" onclick="openModal('Ortak Yatırım','Kâr-zarar ortaklığı, asgari 10.000 TL ile katılabilirsiniz.')">Katıl</button></div>`).join('')}</div></div>`,
-        firefonu: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold">🔥 FİRE Yatırım Fonu</h2><p class="text-gray-300">Finansal bağımsızlık hedefleyenler için faizsiz birikim fonu.</p><div class="bg-[#1a1f4a] p-4 rounded-xl mt-4"><p>Hedef Büyüklük: 50.000.000 ₺</p><p>Güncel Katılım: 12.450.000 ₺</p><div class="h-2 bg-gray-700 rounded-full mt-2"><div class="w-1/4 bg-gold h-2 rounded-full"></div></div><button class="mt-4 btn-gold w-full py-2 rounded-lg" onclick="openModal('FİRE Fonu','Aylık 1.000 TL ile birikime başlayın. Faizsiz, tamamen ortaklık esaslı.')">Fon Katıl</button></div></div>`,
-        ortaklikpaketleri: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold">🤝 Ortaklık Paketleri (WhatsApp Satış Ortaklığı)</h2><p class="text-gray-300 mb-4">Ürünlerimizi sat, komisyon kazan. WhatsApp üzerinden onboarding.</p><div class="grid md:grid-cols-3 gap-4">${["Bronz Ortak | %5 Komisyon | 500₺", "Gümüş Ortak | %10 Komisyon | 2.000₺", "Altın Ortak | %15 Komisyon | 5.000₺"].map(p => `<div class="p-4 bg-[#1a1f4a] rounded-xl text-center"><p class="font-bold text-gold">${p}</p><a href="https://wa.me/905418660202?text=Ortaklık%20paketi%20satın%20almak%20istiyorum" target="_blank" class="mt-3 inline-block btn-gold px-3 py-1 rounded-lg text-sm">WhatsApp ile Katıl</a></div>`).join('')}</div></div>`
+        yatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">📊 Yatırım Ürünleri (Faizsiz)</h2><div class="space-y-3">${["Kira Sertifikası (Sukuk) - Yıllık %14 getiri", "Katılım Endeksi Hisse Sepeti", "Altın ve Emtia Katılım Fonu", "Gayrimenkul Ortaklığı (REIT)"].map(p => `<div class="flex justify-between p-3 bg-[#1a1f4a] rounded-xl"><span class="text-gold font-medium">${p}</span><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Yatırım ürünü başvurusu: ${p}')">WhatsApp ile Başvur</button></div>`).join('')}</div></div>`,
+        faizsiz: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🏠 Faizsiz Sistem Ürünleri</h2><div class="grid gap-3">${faizsizUrunler.map(u => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl faizsiz-item"><div><h3 class="font-bold text-gold">${u.name}</h3><p class="text-sm text-gray-400">${u.aciklama}</p><p class="text-xs text-gold">${u.fiyat}</p></div><div class="flex gap-2"><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Faizsiz ürün başvurusu: ${u.name}')">Başvur</button>${isAdmin ? `<button onclick="deleteFaizsizUrun(${u.id})" class="text-red-400 text-sm">🗑️ Sil</button>` : ''}</div></div>`).join('')}</div>${isAdmin ? `<button onclick="addFaizsizUrun()" class="mt-4 w-full btn-gold py-2 rounded-lg">+ Yeni Faizsiz Ürün Ekle</button>` : ''}</div>`,
+        barter: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🔄 Barter (Takas) Modülü</h2><p class="text-gray-300 mb-4">İşletmeler arası mal/hizmet takası. Faizsiz, komisyonsuz.</p><div class="grid md:grid-cols-2 gap-4"><button class="btn-gold py-2 rounded-lg" onclick="whatsappBasvuru('Barter takas ilanı vermek istiyorum')">Takas İlanı Ver</button><button class="btn-gold py-2 rounded-lg" onclick="whatsappBasvuru('Barter takas aramak istiyorum')">Takas Ara</button></div></div>`,
+        ortakyatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🤝 Ortak Yatırım Havuzları</h2><div class="space-y-3">${ortakYatirimHavuzlari.map(h => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl investment-item"><div><h3 class="font-bold text-gold">${h.name}</h3><p class="text-sm text-gray-400">Hedef: ${h.hedef} | Toplanan: ${h.toplanan}</p><p class="text-xs text-gold">Min Katılım: ${h.katilim}</p></div><div class="flex gap-2"><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Ortak yatırım başvurusu: ${h.name}')">Katıl</button>${isAdmin ? `<button onclick="deleteYatirimHavuzu(${h.id})" class="text-red-400 text-sm">🗑️ Sil</button>` : ''}</div></div>`).join('')}</div>${isAdmin ? `<button onclick="addYatirimHavuzu()" class="mt-4 w-full btn-gold py-2 rounded-lg">+ Yeni Yatırım Havuzu Ekle</button>` : ''}</div>`,
+        firefonu: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🔥 FİRE Yatırım Fonu</h2><p class="text-gray-300">Finansal bağımsızlık için faizsiz birikim fonu.</p><div class="bg-[#1a1f4a] p-4 rounded-xl mt-4"><p class="text-gold font-semibold">Hedef Büyüklük: 50.000.000 ₺</p><p class="text-gold">Güncel Katılım: 12.450.000 ₺</p><div class="h-2 bg-gray-700 rounded-full mt-2"><div class="w-1/4 bg-gold h-2 rounded-full"></div></div><button class="mt-4 btn-gold w-full py-2 rounded-lg" onclick="whatsappBasvuru('FİRE Yatırım Fonu başvurusu')">Fon Katıl (WhatsApp)</button></div></div>`,
+        ortaklikpaketleri: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🤝 Ortaklık Paketleri (WhatsApp)</h2><div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">${ortaklikPaketleri.map(p => `<div class="p-4 bg-[#1a1f4a] rounded-xl text-center"><i class="fas ${p.icon} text-gold text-3xl mb-2"></i><h3 class="font-bold text-gold text-lg">${p.name}</h3><p class="text-gold font-semibold">Komisyon: ${p.komisyon}</p><p class="text-sm">${p.fiyat}</p><button class="mt-3 btn-gold px-3 py-1 rounded-lg text-sm w-full" onclick="whatsappBasvuru('Ortaklık başvurusu: ${p.name} paketini satın almak istiyorum.')">WhatsApp ile Katıl</button>${isAdmin ? `<button onclick="deleteOrtaklikPaketi(${p.id})" class="mt-2 text-red-400 text-xs w-full">Sil</button>` : ''}</div>`).join('')}</div>${isAdmin ? `<button onclick="addOrtaklikPaketi()" class="mt-5 w-full btn-gold py-2 rounded-lg">+ Yeni Paket Ekle</button>` : ''}</div>`
     };
-
+    
     // ---------- SIDEBAR & FOOTER ----------
     function renderSidebar() {
         const menu = [
@@ -105,13 +211,9 @@
         ];
         return `
             <aside class="fixed left-0 top-0 h-full w-72 bg-[#0a0f2c] shadow-2xl border-r border-[#1e2a5e] p-5 overflow-y-auto z-10">
-                <div class="flex items-center gap-3 mb-8"><i class="fas fa-chart-line text-gold text-2xl"></i><h1 class="text-2xl font-bold text-gold">Faizsiz Finans</h1></div>
+                <div class="flex items-center justify-between mb-8"><div class="flex items-center gap-3"><i class="fas fa-chart-line text-gold text-2xl"></i><h1 class="text-2xl font-bold text-gold">Faizsiz Finans</h1></div><div class="admin-badge" onclick="openAdminPanel()"><i class="fas fa-shield-alt mr-1"></i>Yönetim</div></div>
                 <nav class="space-y-1">
-                    ${menu.map(item => `
-                        <div onclick="currentPage='${item.id}'; render()" class="sidebar-link ${currentPage === item.id ? 'active-page' : 'text-gray-300'}">
-                            <i class="fas ${item.icon} w-5"></i><span>${item.label}</span>
-                        </div>
-                    `).join('')}
+                    ${menu.map(item => `<div onclick="currentPage='${item.id}'; render()" class="sidebar-link ${currentPage === item.id ? 'active-page' : 'text-gray-300'}"><i class="fas ${item.icon} w-5"></i><span>${item.label}</span></div>`).join('')}
                 </nav>
                 <div class="absolute bottom-0 left-0 right-0 p-5 border-t border-[#1e2a5e]">
                     ${!isLoggedIn ? `<button onclick="openLoginModal()" class="w-full btn-gold py-2 rounded-lg">Giriş Yap / Ortak Ol</button>` : `<div class="text-center"><p class="text-gold font-bold">${user.name}</p><p class="text-sm text-gray-400">${user.ortaklik}</p><button onclick="isLoggedIn=false;render()" class="mt-2 text-red-400 text-sm">Çıkış</button></div>`}
@@ -119,7 +221,7 @@
             </aside>
         `;
     }
-
+    
     function renderFooter() {
         return `
             <footer class="ml-72 border-t border-[#1e2a5e] mt-12 pt-8 pb-6 text-center text-gray-400 text-sm">
@@ -127,32 +229,30 @@
                     <div><h3 class="text-gold font-bold">Faizsiz Finans</h3><p>Ortak yatırım, barter, katılım finans ve FIRE fonu</p></div>
                     <div><h3 class="text-gold font-bold">İletişim</h3><p><i class="fab fa-whatsapp text-gold mr-1"></i> 0541 866 0202<br><i class="fas fa-phone text-gold mr-1"></i> 0541 866 0202<br><i class="fas fa-envelope text-gold mr-1"></i> orhanboyraz0216@gmail.com</p></div>
                     <div><h3 class="text-gold font-bold">Adres</h3><p>Agora Çarşısı No: Z/31<br>Nilüfer / BURSA</p></div>
-                    <div><h3 class="text-gold font-bold">Web & Yasal</h3><p><a href="https://anadolunetwork.tr" target="_blank" class="hover:text-gold">anadolunetwork.tr</a><br>Kurucu: Orhan BOYRAZ</p></div>
+                    <div><h3 class="text-gold font-bold">Web & Yasal</h3><p><a href="https://anadolunetwork.tr" target="_blank" class="hover:text-gold">anadolunetwork.tr</a><br>Kurucu: CFO. Müh. Orhan BOYRAZ</p></div>
                 </div>
-                <div class="border-t border-[#1e2a5e] pt-4">© 2025 Faizsiz Finans | Helal, Katılım, Ortaklık Esaslı</div>
+                <div class="border-t border-[#1e2a5e] pt-4">© 2025 Faizsiz Finans Ekosistemi| Helal, Katılım, Ortaklık Esaslı</div>
             </footer>
         `;
     }
-
+    
     function render() {
         const content = pages[currentPage] ? pages[currentPage]() : pages.home();
-        const html = `
-            <div class="flex min-h-screen">
-                ${renderSidebar()}
-                <main class="flex-1 ml-72 p-6">
-                    <div class="max-w-6xl mx-auto">
-                        ${content}
-                        ${renderFooter()}
-                    </div>
-                </main>
-            </div>
-        `;
+        const html = `<div class="flex min-h-screen">${renderSidebar()}<main class="flex-1 ml-72 p-6"><div class="max-w-6xl mx-auto">${content}${renderFooter()}</div></main></div>`;
         document.getElementById("app").innerHTML = html;
     }
-
+    
     render();
+    window.whatsappBasvuru = whatsappBasvuru;
     window.openModal = openModal;
     window.openLoginModal = openLoginModal;
+    window.openAdminPanel = openAdminPanel;
+    window.addOrtaklikPaketi = addOrtaklikPaketi;
+    window.deleteOrtaklikPaketi = deleteOrtaklikPaketi;
+    window.addFaizsizUrun = addFaizsizUrun;
+    window.deleteFaizsizUrun = deleteFaizsizUrun;
+    window.addYatirimHavuzu = addYatirimHavuzu;
+    window.deleteYatirimHavuzu = deleteYatirimHavuzu;
 </script>
 </body>
 </html>
