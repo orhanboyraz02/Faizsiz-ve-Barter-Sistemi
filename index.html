@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Faizsiz Finans Sistemi| Ortak Yatırım, Barter, FIRE Fonu, Katılım</title>
+    <title>Faizsiz Finans Ekosistemi| Ortak Yatırım, Barter, FIRE Fonu, Katılım</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -38,14 +38,28 @@
     let isAdmin = false;
     let user = { name: "Ahmet Yatırımcı", email: "ahmet@katilim.com", ortaklik: "Gümüş Ortak" };
     
-    // ---------- VERİLER (Yönetici tarafından düzenlenebilir) ----------
+    // ---------- KULLANICININ YATIRIMLARI (İzleme/Yönetme) ----------
+    let userInvestments = [
+        { id: 1, name: "Kira Sertifikası (Sukuk)", amount: 25000, date: "2025-01-15", status: "Aktif", getiri: "%14 (yıllık)" },
+        { id: 2, name: "Katılım Endeksi Sepeti", amount: 15000, date: "2025-02-10", status: "Aktif", getiri: "%12 (yıllık)" }
+    ];
+    
+    // ---------- YATIRIM ÜRÜNLERİ (Yönetici ekleyip silebilir) ----------
+    let yatirimUrunleri = [
+        { id: 1, name: "Kira Sertifikası (Sukuk)", getiri: "Yıllık %14", risk: "Düşük", minTutar: "5.000 ₺" },
+        { id: 2, name: "Katılım Endeksi Hisse Sepeti", getiri: "Yıllık %12", risk: "Orta", minTutar: "10.000 ₺" },
+        { id: 3, name: "Altın ve Emtia Katılım Fonu", getiri: "Yıllık %10", risk: "Düşük", minTutar: "15.000 ₺" },
+        { id: 4, name: "Gayrimenkul Ortaklığı (REIT)", getiri: "Yıllık %15", risk: "Orta", minTutar: "25.000 ₺" }
+    ];
+    
+    // ---------- DİĞER VERİLER ----------
     let ortaklikPaketleri = [
         { id: 1, name: "Ortak", komisyon: "%3", fiyat: "Ücretsiz", icon: "fa-user" },
         { id: 2, name: "Bronz Ortak", komisyon: "%5", fiyat: "500 ₺", icon: "fa-medal" },
         { id: 3, name: "Gümüş Ortak", komisyon: "%10", fiyat: "2.000 ₺", icon: "fa-gem" },
         { id: 4, name: "Altın Ortak", komisyon: "%15", fiyat: "5.000 ₺", icon: "fa-crown" },
-        { id: 5, name: "Platin Ortak", komisyon: "%20", fiyat: "15.000 ₺", icon: "fa-star" },
-        { id: 6, name: "Elmas Ortak", komisyon: "%30", fiyat: "50.000 ₺", icon: "fa-diamond" }
+        { id: 5, name: "Platin Ortak", komisyon: "%20", fiyat: "10.000 ₺", icon: "fa-star" },
+        { id: 6, name: "Elmas Ortak", komisyon: "%30", fiyat: "20.000 ₺", icon: "fa-diamond" }
     ];
     
     let faizsizUrunler = [
@@ -61,20 +75,77 @@
         { id: 3, name: "Yazılım ve Yapay Zeka Girişimi", hedef: "8.000.000 ₺", toplanan: "2.500.000 ₺", katilim: "2.000 ₺" }
     ];
     
-    // ---------- MODAL & WHATSAPP ----------
-    function openModal(title, contentHtml) {
+    // ---------- YÖNETİM PANELİ (Şifreli) ----------
+    let adminPassword = "admin123";
+    
+    function openAdminPanel() {
         const modal = document.createElement("div");
         modal.className = "modal";
         modal.innerHTML = `
             <div class="modal-content">
-                <h2 class="text-2xl font-bold text-gold mb-4">${title}</h2>
-                ${contentHtml}
-                <button class="mt-5 w-full py-2 rounded-xl border border-gray-600 text-gray-300" onclick="this.closest('.modal').remove()">Kapat</button>
+                <h2 class="text-2xl font-bold text-gold mb-4">👑 Yönetici Paneli</h2>
+                <input type="password" id="adminPass" placeholder="Şifre" class="w-full p-3 rounded-xl bg-[#1a1f4a] border border-[#2a2f5a] mb-4">
+                <button id="verifyAdmin" class="w-full btn-gold py-2 rounded-xl">Giriş</button>
             </div>
         `;
         document.body.appendChild(modal);
+        document.getElementById("verifyAdmin").onclick = () => {
+            if (document.getElementById("adminPass").value === adminPassword) {
+                isAdmin = true;
+                modal.remove();
+                render();
+                alert("Yönetici paneline hoş geldiniz! Yatırım ürünü ekleyip silebilirsiniz.");
+            } else {
+                alert("Şifre yanlış!");
+            }
+        };
     }
     
+    // ---------- YATIRIM ÜRÜNÜ EKLEME/SİLME ----------
+    function addYatirimUrunu() {
+        let name = prompt("Yatırım Ürünü Adı (örn: Yeşil Enerji Fonu)");
+        if (!name) return;
+        let getiri = prompt("Getiri Oranı (örn: Yıllık %16)");
+        let risk = prompt("Risk Seviyesi (Düşük/Orta/Yüksek)");
+        let minTutar = prompt("Minimum Tutar (örn: 8.000 ₺)");
+        yatirimUrunleri.push({ id: Date.now(), name, getiri, risk, minTutar });
+        render();
+        alert("✅ Yatırım ürünü eklendi!");
+    }
+    
+    function deleteYatirimUrunu(id) {
+        if (confirm("Bu yatırım ürününü silmek istediğinize emin misiniz?")) {
+            yatirimUrunleri = yatirimUrunleri.filter(u => u.id !== id);
+            render();
+        }
+    }
+    
+    // ---------- KULLANICI YATIRIM İZLEME/YÖNETME ----------
+    function addUserInvestment() {
+        let productNames = yatirimUrunleri.map(u => u.name).join(", ");
+        let name = prompt(`Hangi ürüne yatırım yapmak istiyorsunuz? Mevcut ürünler: ${productNames}`);
+        if (!name) return;
+        let amount = prompt("Yatırım tutarı (₺)");
+        if (!amount) return;
+        let found = yatirimUrunleri.find(u => u.name.toLowerCase() === name.toLowerCase());
+        if (!found) {
+            alert("Ürün bulunamadı! Lütfen listedeki ürünlerden birini seçin.");
+            return;
+        }
+        userInvestments.push({ id: Date.now(), name: found.name, amount: parseInt(amount), date: new Date().toISOString().split('T')[0], status: "Aktif", getiri: found.getiri });
+        render();
+        alert(`✅ ${found.name} ürününe ${amount} ₺ yatırım yapıldı!`);
+    }
+    
+    function deleteUserInvestment(id) {
+        if (confirm("Bu yatırımı iptal etmek istediğinize emin misiniz?")) {
+            userInvestments = userInvestments.filter(inv => inv.id !== id);
+            render();
+            alert("✅ Yatırım iptal edildi.");
+        }
+    }
+    
+    // ---------- MODAL & WHATSAPP ----------
     function whatsappBasvuru(text) {
         window.open(`https://wa.me/905418660202?text=${encodeURIComponent(text)}`, '_blank');
     }
@@ -99,84 +170,6 @@
         };
     }
     
-    // ---------- YÖNETİM PANELİ (Şifreli) ----------
-    let adminPassword = "admin123";
-    
-    function openAdminPanel() {
-        const modal = document.createElement("div");
-        modal.className = "modal";
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2 class="text-2xl font-bold text-gold mb-4">👑 Yönetici Paneli</h2>
-                <input type="password" id="adminPass" placeholder="Şifre" class="w-full p-3 rounded-xl bg-[#1a1f4a] border border-[#2a2f5a] mb-4">
-                <button id="verifyAdmin" class="w-full btn-gold py-2 rounded-xl">Giriş</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        document.getElementById("verifyAdmin").onclick = () => {
-            if (document.getElementById("adminPass").value === adminPassword) {
-                isAdmin = true;
-                modal.remove();
-                render();
-                alert("Yönetici paneline hoş geldiniz! Ürün ekleme/silme aktif.");
-            } else {
-                alert("Şifre yanlış!");
-            }
-        };
-    }
-    
-    // Ürün Ekleme / Silme (Yönetici)
-    function addOrtaklikPaketi() {
-        let name = prompt("Paket Adı (örn: Premium Ortak)");
-        if (!name) return;
-        let komisyon = prompt("Komisyon Oranı (örn: %25)");
-        let fiyat = prompt("Fiyat (örn: 30.000 ₺)");
-        ortaklikPaketleri.push({ id: Date.now(), name, komisyon, fiyat, icon: "fa-certificate" });
-        render();
-        alert("✅ Paket eklendi!");
-    }
-    
-    function deleteOrtaklikPaketi(id) {
-        if (confirm("Bu paketi silmek istediğinize emin misiniz?")) {
-            ortaklikPaketleri = ortaklikPaketleri.filter(p => p.id !== id);
-            render();
-        }
-    }
-    
-    function addFaizsizUrun() {
-        let name = prompt("Ürün Adı (örn: Yazlık Finansmanı)");
-        if (!name) return;
-        let aciklama = prompt("Açıklama");
-        let fiyat = prompt("Başlangıç Fiyatı");
-        faizsizUrunler.push({ id: Date.now(), name, aciklama, fiyat });
-        render();
-        alert("✅ Faizsiz ürün eklendi!");
-    }
-    
-    function deleteFaizsizUrun(id) {
-        if (confirm("Bu ürünü silmek istediğinize emin misiniz?")) {
-            faizsizUrunler = faizsizUrunler.filter(u => u.id !== id);
-            render();
-        }
-    }
-    
-    function addYatirimHavuzu() {
-        let name = prompt("Girişim Adı");
-        if (!name) return;
-        let hedef = prompt("Hedef Büyüklük (örn: 20.000.000 ₺)");
-        let katilim = prompt("Minimum Katılım");
-        ortakYatirimHavuzlari.push({ id: Date.now(), name, hedef, toplanan: "0 ₺", katilim });
-        render();
-        alert("✅ Yatırım havuzu eklendi!");
-    }
-    
-    function deleteYatirimHavuzu(id) {
-        if (confirm("Bu havuzu silmek istediğinize emin misiniz?")) {
-            ortakYatirimHavuzlari = ortakYatirimHavuzlari.filter(h => h.id !== id);
-            render();
-        }
-    }
-    
     // ---------- SAYFALAR ----------
     const pages = {
         home: () => `
@@ -190,15 +183,16 @@
                 <div class="card p-6"><i class="fas fa-users text-gold text-3xl mb-2"></i><h3 class="text-xl font-bold text-gold">Ortaklık Paketleri</h3><p class="text-gray-400">WhatsApp satış ortaklığı</p><button class="mt-3 text-gold font-semibold" onclick="currentPage='ortaklikpaketleri';render()">→ Detay</button></div>
             </div>
         `,
-        yatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">📊 Yatırım Ürünleri (Faizsiz)</h2><div class="space-y-3">${["Kira Sertifikası (Sukuk) - Yıllık %14 getiri", "Katılım Endeksi Hisse Sepeti", "Altın ve Emtia Katılım Fonu", "Gayrimenkul Ortaklığı (REIT)"].map(p => `<div class="flex justify-between p-3 bg-[#1a1f4a] rounded-xl"><span class="text-gold font-medium">${p}</span><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Yatırım ürünü başvurusu: ${p}')">WhatsApp ile Başvur</button></div>`).join('')}</div></div>`,
-        faizsiz: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🏠 Faizsiz Sistem Ürünleri</h2><div class="grid gap-3">${faizsizUrunler.map(u => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl faizsiz-item"><div><h3 class="font-bold text-gold">${u.name}</h3><p class="text-sm text-gray-400">${u.aciklama}</p><p class="text-xs text-gold">${u.fiyat}</p></div><div class="flex gap-2"><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Faizsiz ürün başvurusu: ${u.name}')">Başvur</button>${isAdmin ? `<button onclick="deleteFaizsizUrun(${u.id})" class="text-red-400 text-sm">🗑️ Sil</button>` : ''}</div></div>`).join('')}</div>${isAdmin ? `<button onclick="addFaizsizUrun()" class="mt-4 w-full btn-gold py-2 rounded-lg">+ Yeni Faizsiz Ürün Ekle</button>` : ''}</div>`,
+        yatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">📊 Yatırım Ürünleri (Faizsiz)</h2><div class="space-y-3">${yatirimUrunleri.map(u => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl product-item"><div><h3 class="font-bold text-gold">${u.name}</h3><p class="text-sm text-gray-400">Getiri: ${u.getiri} | Risk: ${u.risk} | Min: ${u.minTutar}</p></div><div class="flex gap-2"><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Yatırım başvurusu: ${u.name}')">WhatsApp ile Başvur</button>${isAdmin ? `<button onclick="deleteYatirimUrunu(${u.id})" class="text-red-400 text-sm">🗑️ Sil</button>` : ''}</div></div>`).join('')}</div>${isAdmin ? `<button onclick="addYatirimUrunu()" class="mt-4 w-full btn-gold py-2 rounded-lg">+ Yeni Yatırım Ürünü Ekle</button>` : ''}</div>`,
+        faizsiz: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🏠 Faizsiz Sistem Ürünleri</h2><div class="grid gap-3">${faizsizUrunler.map(u => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl faizsiz-item"><div><h3 class="font-bold text-gold">${u.name}</h3><p class="text-sm text-gray-400">${u.aciklama}</p><p class="text-xs text-gold">${u.fiyat}</p></div><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Faizsiz ürün başvurusu: ${u.name}')">Başvur</button></div>`).join('')}</div></div>`,
         barter: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🔄 Barter (Takas) Modülü</h2><p class="text-gray-300 mb-4">İşletmeler arası mal/hizmet takası. Faizsiz, komisyonsuz.</p><div class="grid md:grid-cols-2 gap-4"><button class="btn-gold py-2 rounded-lg" onclick="whatsappBasvuru('Barter takas ilanı vermek istiyorum')">Takas İlanı Ver</button><button class="btn-gold py-2 rounded-lg" onclick="whatsappBasvuru('Barter takas aramak istiyorum')">Takas Ara</button></div></div>`,
-        ortakyatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🤝 Ortak Yatırım Havuzları</h2><div class="space-y-3">${ortakYatirimHavuzlari.map(h => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl investment-item"><div><h3 class="font-bold text-gold">${h.name}</h3><p class="text-sm text-gray-400">Hedef: ${h.hedef} | Toplanan: ${h.toplanan}</p><p class="text-xs text-gold">Min Katılım: ${h.katilim}</p></div><div class="flex gap-2"><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Ortak yatırım başvurusu: ${h.name}')">Katıl</button>${isAdmin ? `<button onclick="deleteYatirimHavuzu(${h.id})" class="text-red-400 text-sm">🗑️ Sil</button>` : ''}</div></div>`).join('')}</div>${isAdmin ? `<button onclick="addYatirimHavuzu()" class="mt-4 w-full btn-gold py-2 rounded-lg">+ Yeni Yatırım Havuzu Ekle</button>` : ''}</div>`,
+        ortakyatirim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🤝 Ortak Yatırım Havuzları</h2><div class="space-y-3">${ortakYatirimHavuzlari.map(h => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl investment-item"><div><h3 class="font-bold text-gold">${h.name}</h3><p class="text-sm text-gray-400">Hedef: ${h.hedef} | Toplanan: ${h.toplanan}</p><p class="text-xs text-gold">Min Katılım: ${h.katilim}</p></div><button class="text-gold text-sm font-semibold" onclick="whatsappBasvuru('Ortak yatırım başvurusu: ${h.name}')">Katıl</button></div>`).join('')}</div></div>`,
         firefonu: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🔥 FİRE Yatırım Fonu</h2><p class="text-gray-300">Finansal bağımsızlık için faizsiz birikim fonu.</p><div class="bg-[#1a1f4a] p-4 rounded-xl mt-4"><p class="text-gold font-semibold">Hedef Büyüklük: 50.000.000 ₺</p><p class="text-gold">Güncel Katılım: 12.450.000 ₺</p><div class="h-2 bg-gray-700 rounded-full mt-2"><div class="w-1/4 bg-gold h-2 rounded-full"></div></div><button class="mt-4 btn-gold w-full py-2 rounded-lg" onclick="whatsappBasvuru('FİRE Yatırım Fonu başvurusu')">Fon Katıl (WhatsApp)</button></div></div>`,
-        ortaklikpaketleri: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🤝 Ortaklık Paketleri (WhatsApp)</h2><div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">${ortaklikPaketleri.map(p => `<div class="p-4 bg-[#1a1f4a] rounded-xl text-center"><i class="fas ${p.icon} text-gold text-3xl mb-2"></i><h3 class="font-bold text-gold text-lg">${p.name}</h3><p class="text-gold font-semibold">Komisyon: ${p.komisyon}</p><p class="text-sm">${p.fiyat}</p><button class="mt-3 btn-gold px-3 py-1 rounded-lg text-sm w-full" onclick="whatsappBasvuru('Ortaklık başvurusu: ${p.name} paketini satın almak istiyorum.')">WhatsApp ile Katıl</button>${isAdmin ? `<button onclick="deleteOrtaklikPaketi(${p.id})" class="mt-2 text-red-400 text-xs w-full">Sil</button>` : ''}</div>`).join('')}</div>${isAdmin ? `<button onclick="addOrtaklikPaketi()" class="mt-5 w-full btn-gold py-2 rounded-lg">+ Yeni Paket Ekle</button>` : ''}</div>`
+        ortaklikpaketleri: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">🤝 Ortaklık Paketleri (WhatsApp)</h2><div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">${ortaklikPaketleri.map(p => `<div class="p-4 bg-[#1a1f4a] rounded-xl text-center"><i class="fas ${p.icon} text-gold text-3xl mb-2"></i><h3 class="font-bold text-gold text-lg">${p.name}</h3><p class="text-gold font-semibold">Komisyon: ${p.komisyon}</p><p class="text-sm">${p.fiyat}</p><button class="mt-3 btn-gold px-3 py-1 rounded-lg text-sm w-full" onclick="whatsappBasvuru('Ortaklık başvurusu: ${p.name} paketini satın almak istiyorum.')">WhatsApp ile Katıl</button></div>`).join('')}</div></div>`,
+        yatirimlarim: () => `<div class="card p-6"><h2 class="text-2xl font-bold text-gold mb-4">📈 Yatırımlarım (İzleme ve Yönetme)</h2><div class="space-y-3">${userInvestments.length === 0 ? '<p class="text-gray-400">Henüz yatırımınız bulunmuyor.</p>' : userInvestments.map(inv => `<div class="flex justify-between items-center p-3 bg-[#1a1f4a] rounded-xl"><div><h3 class="font-bold text-gold">${inv.name}</h3><p class="text-sm text-gray-400">Tutar: ${inv.amount} ₺ | Tarih: ${inv.date} | Getiri: ${inv.getiri}</p><span class="text-xs text-emerald-400">${inv.status}</span></div><button onclick="deleteUserInvestment(${inv.id})" class="text-red-400 text-sm"><i class="fas fa-trash mr-1"></i>İptal</button></div>`).join('')}</div><button onclick="addUserInvestment()" class="mt-5 w-full btn-gold py-2 rounded-lg">+ Yeni Yatırım Ekle</button></div>`
     };
     
-    // ---------- SIDEBAR & FOOTER ----------
+    // ---------- SIDEBAR ----------
     function renderSidebar() {
         const menu = [
             { id: "home", label: "🏠 Anasayfa", icon: "fa-home" },
@@ -207,7 +201,8 @@
             { id: "barter", label: "🔄 Barter Modülü", icon: "fa-exchange-alt" },
             { id: "ortakyatirim", label: "🤝 Ortak Yatırım", icon: "fa-handshake" },
             { id: "firefonu", label: "🔥 FİRE Yatırım Fonu", icon: "fa-fire" },
-            { id: "ortaklikpaketleri", label: "📦 Ortaklık Paketleri", icon: "fa-box" }
+            { id: "ortaklikpaketleri", label: "📦 Ortaklık Paketleri", icon: "fa-box" },
+            { id: "yatirimlarim", label: "📊 Yatırımlarım", icon: "fa-chart-simple" }
         ];
         return `
             <aside class="fixed left-0 top-0 h-full w-72 bg-[#0a0f2c] shadow-2xl border-r border-[#1e2a5e] p-5 overflow-y-auto z-10">
@@ -222,16 +217,17 @@
         `;
     }
     
+    // ---------- FOOTER ----------
     function renderFooter() {
         return `
             <footer class="ml-72 border-t border-[#1e2a5e] mt-12 pt-8 pb-6 text-center text-gray-400 text-sm">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 text-left px-6">
                     <div><h3 class="text-gold font-bold">Faizsiz Finans</h3><p>Ortak yatırım, barter, katılım finans ve FIRE fonu</p></div>
-                    <div><h3 class="text-gold font-bold">İletişim</h3><p><i class="fab fa-whatsapp text-gold mr-1"></i> 0541 866 0202<br><i class="fas fa-phone text-gold mr-1"></i> 0541 866 0202<br><i class="fas fa-envelope text-gold mr-1"></i> orhanboyraz0216@gmail.com</p></div>
+                    <div><h3 class="text-gold font-bold">İletişim</h3><p><i class="fab fa-whatsapp text-gold mr-1"></i> 0540 966 6602<br><i class="fas fa-phone text-gold mr-1"></i> 0541 866 0202<br><i class="fas fa-envelope text-gold mr-1"></i> orhanboyraz0216@gmail.com</p></div>
                     <div><h3 class="text-gold font-bold">Adres</h3><p>Agora Çarşısı No: Z/31<br>Nilüfer / BURSA</p></div>
-                    <div><h3 class="text-gold font-bold">Web & Yasal</h3><p><a href="https://anadolunetwork.tr" target="_blank" class="hover:text-gold">anadolunetwork.tr</a><br>Kurucu: CFO. Müh. Orhan BOYRAZ</p></div>
+                    <div><h3 class="text-gold font-bold">Web & Yasal</h3><p><a href="https://anadolunetwork.tr" target="_blank" class="hover:text-gold">anadolunetwork.tr</a><br>Kurucu:CFO.Orhan BOYRAZ</p></div>
                 </div>
-                <div class="border-t border-[#1e2a5e] pt-4">© 2025 Faizsiz Finans Ekosistemi| Helal, Katılım, Ortaklık Esaslı</div>
+                <div class="border-t border-[#1e2a5e] pt-4">© 2025 Faizsiz Finans | Helal, Katılım, Ortaklık Esaslı</div>
             </footer>
         `;
     }
@@ -244,15 +240,12 @@
     
     render();
     window.whatsappBasvuru = whatsappBasvuru;
-    window.openModal = openModal;
     window.openLoginModal = openLoginModal;
     window.openAdminPanel = openAdminPanel;
-    window.addOrtaklikPaketi = addOrtaklikPaketi;
-    window.deleteOrtaklikPaketi = deleteOrtaklikPaketi;
-    window.addFaizsizUrun = addFaizsizUrun;
-    window.deleteFaizsizUrun = deleteFaizsizUrun;
-    window.addYatirimHavuzu = addYatirimHavuzu;
-    window.deleteYatirimHavuzu = deleteYatirimHavuzu;
+    window.addYatirimUrunu = addYatirimUrunu;
+    window.deleteYatirimUrunu = deleteYatirimUrunu;
+    window.addUserInvestment = addUserInvestment;
+    window.deleteUserInvestment = deleteUserInvestment;
 </script>
 </body>
 </html>
